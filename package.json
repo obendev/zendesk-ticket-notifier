@@ -1,0 +1,20 @@
+{
+	"private": true,
+	"name": "zendesk-ticket-notifier",
+	"version": "0.1.0",
+	"license": "MIT",
+	"type": "module",
+	"module": "src/index.ts",
+	"scripts": {
+		"build:prod": "bun build ./src/index.ts --outfile ./dist/index.min.js --minify",
+		"build:dev": "bun build ./src/index.ts --outfile ./dist/index.js",
+		"format": "biome format --write",
+		"lint": "biome lint --write",
+		"check": "biome check --write"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.2",
+		"@types/bun": "latest"
+	}
+}

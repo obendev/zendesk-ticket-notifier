@@ -1,0 +1,43 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on",
+				"useSortedKeys": "on",
+				"useSortedProperties": "on"
+			}
+		}
+	},
+
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [".vscode/**", "src/**"]
+	},
+
+	"javascript": {
+		"globals": ["Bun"]
+	},
+
+	"linter": {
+		"domains": {
+			"project": "all"
+		},
+
+		"rules": {
+			"correctness": {
+				"noNodejsModules": "on"
+			},
+
+			"style": {
+				"useConsistentMemberAccessibility": {
+					"level": "on",
+					"options": {
+						"accessibility": "explicit"
+					}
+				}
+			}
+		}
+	}
+}
