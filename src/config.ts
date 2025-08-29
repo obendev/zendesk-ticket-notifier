@@ -13,6 +13,9 @@ export const TARGET_STATUS_LABELS: readonly string[] = [];
 // A list of tags to include in the search query.
 export const TARGET_TAGS: readonly string[] = [];
 
+// A string used to identify the target group by name, with the script finding the closest match.
+export const TARGET_GROUP: string = "";
+
 // The base part of the search query for any other static filters.
 export const BASE_SEARCH_QUERY: string = "";
 
@@ -21,7 +24,7 @@ export const BASE_SEARCH_QUERY: string = "";
 export const SESSION_STORAGE_KEY = "zendeskNotifiedTicketIds";
 
 // --- Initialization Settings ---
-// The maximum number of times to retry fetching initial data (like custom status IDs).
+// The maximum number of times to retry fetching initial data.
 export const MAX_INIT_RETRIES: number = 3;
 
 // The delay in milliseconds between each retry attempt.
@@ -34,5 +37,6 @@ export const ZENDESK_TICKET_URL_BASE = "/agent/tickets/";
 // API endpoints
 export const API_ENDPOINTS = {
 	CUSTOM_STATUSES: "/api/v2/custom_statuses.json",
+	GROUPS: "/api/v2/groups.json",
 	SEARCH: "/api/v2/search.json",
 } as const;

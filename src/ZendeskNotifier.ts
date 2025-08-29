@@ -4,6 +4,7 @@ import {
 	MAX_INIT_RETRIES,
 	POLLING_INTERVAL_MS,
 	RETRY_DELAY_MS,
+	TARGET_GROUP,
 	TARGET_STATUS_LABELS,
 	TARGET_TAGS,
 	ZENDESK_TICKET_URL_BASE,
@@ -100,8 +101,9 @@ export class ZendeskNotifier {
 	 */
 	private async performInitializationSteps(): Promise<void> {
 		await this.requestNotificationPermission();
-		const targetIds = await this.fetchAndFilterStatusIds();
-		this.buildSearchQuery(targetIds);
+		const targetStatusIds = await this.fetchAndFilterStatusIds();
+		const targetGroupId = await this.fetchAndFindGroupId();
+		this.buildSearchQuery(targetStatusIds, targetGroupId);
 		console.info("[Notifier] Using dynamic search query:", this.searchQuery);
 	}
 
@@ -137,6 +139,35 @@ export class ZendeskNotifier {
 		);
 
 		return targetStatuses.map((s) => s.id);
+	}
+
+	/**
+	 * Fetches groups and finds the ID of the one that best matches the target group name.
+	 * Returns null if no group name is specified or no match is found.
+	 */
+	private async fetchAndFindGroupId(): Promise<number | null> {
+		if (!TARGET_GROUP) {
+			return null;
+		}
+
+		const groups = await this.api.fetchAllGroups();
+		const lowerCaseTarget = TARGET_GROUP.toLowerCase();
+
+		const targetGroup = groups.find((g) =>
+			g.name.toLowerCase().includes(lowerCaseTarget),
+		);
+
+		if (!targetGroup) {
+			console.warn(
+				`[Notifier] Could not find a matching group for "${TARGET_GROUP}".`,
+			);
+			return null;
+		}
+
+		console.log("[Notifier] Successfully matched target group:");
+		console.table([{ "Group Name": targetGroup.name, ID: targetGroup.id }]);
+
+		return targetGroup.id;
 	}
 
 	/**
@@ -193,10 +224,10 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Builds the final search query by combining base query, tags, and status IDs.
+	 * Builds the final search query by combining base query, tags, statuses, and group.
 	 * Throws an error if the resulting query is empty.
 	 */
-	private buildSearchQuery(statusIds: number[]): void {
+	private buildSearchQuery(statusIds: number[], groupId: number | null): void {
 		const queryParts: string[] = [];
 
 		if (BASE_SEARCH_QUERY) {
@@ -205,6 +236,10 @@ export class ZendeskNotifier {
 
 		if (TARGET_TAGS.length > 0) {
 			queryParts.push(`tags:${TARGET_TAGS.join(",")}`);
+		}
+
+		if (groupId) {
+			queryParts.push(`group:${groupId}`);
 		}
 
 		if (statusIds.length > 0) {
@@ -216,7 +251,7 @@ export class ZendeskNotifier {
 
 		if (queryParts.length === 0) {
 			throw new Error(
-				"Search query is empty. Please set BASE_SEARCH_QUERY, TARGET_TAGS, or TARGET_STATUS_LABELS in the config.",
+				"Search query is empty. Please set at least one search criterion in the config.",
 			);
 		}
 

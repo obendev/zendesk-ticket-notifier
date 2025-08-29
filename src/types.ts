@@ -11,6 +11,14 @@ export interface ZendeskCustomStatus {
 }
 
 /**
+ * Represents a group object from the Zendesk API.
+ */
+export interface ZendeskGroup {
+	readonly id: number;
+	readonly name: string;
+}
+
+/**
  * Represents a simplified ticket search result object from the Zendesk API.
  */
 export interface ZendeskTicketSearchResult {

@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "./config.ts";
 import type {
 	ZendeskCustomStatus,
+	ZendeskGroup,
 	ZendeskTicketSearchResult,
 } from "./types.ts";
 
@@ -69,6 +70,17 @@ export class ZendeskApiClient {
 			custom_statuses: ZendeskCustomStatus[];
 		}>(API_ENDPOINTS.CUSTOM_STATUSES);
 		return data.custom_statuses;
+	}
+
+	/**
+	 * Fetches all groups from the Zendesk API.
+	 * @returns A promise that resolves to an array of group objects.
+	 */
+	public async fetchAllGroups(): Promise<ZendeskGroup[]> {
+		const data = await this.fetch<{ groups: ZendeskGroup[] }>(
+			API_ENDPOINTS.GROUPS,
+		);
+		return data.groups;
 	}
 
 	/**
