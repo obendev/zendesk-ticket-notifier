@@ -100,7 +100,7 @@ export class ZendeskNotifier {
 	 * The core steps of the initialization process.
 	 */
 	private async performInitializationSteps(): Promise<void> {
-		await this.requestNotificationPermission();
+		await ZendeskNotifier.requestNotificationPermission();
 		const targetStatusIds = await this.fetchAndFilterStatusIds();
 		const targetGroupId = await this.fetchAndFindGroupId();
 		this.buildSearchQuery(targetStatusIds, targetGroupId);
@@ -261,7 +261,7 @@ export class ZendeskNotifier {
 	/**
 	 * Requests permission to send notifications.
 	 */
-	private async requestNotificationPermission(): Promise<void> {
+	private static async requestNotificationPermission(): Promise<void> {
 		if (Notification.permission === "granted") return;
 		if (Notification.permission === "denied") {
 			throw new Error("Notification permission has been explicitly denied.");
