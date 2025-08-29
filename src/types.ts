@@ -17,5 +17,5 @@ export interface ZendeskTicketSearchResult {
 	readonly id: number;
 	readonly subject: string;
 	readonly custom_status_id: number;
-	readonly status: "new" | "open";
+	readonly status: string;
 }
