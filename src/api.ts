@@ -15,10 +15,12 @@ export class ApiError extends Error {
 	 * Creates an instance of ApiError.
 	 * @param message The error message.
 	 * @param status The HTTP status code, if applicable.
+	 * @param body The raw response body, if applicable.
 	 */
 	public constructor(
 		message: string,
 		public readonly status?: number,
+		public readonly body?: unknown,
 	) {
 		super(message);
 	}
@@ -40,8 +42,9 @@ export class ZendeskApiClient {
 		if (!response.ok) {
 			const errorBody = await response.text();
 			throw new ApiError(
-				`API request to ${endpoint} failed with status ${response.status}. Body: ${errorBody}`,
+				`API request to ${endpoint} failed with status ${response.status}.`,
 				response.status,
+				errorBody,
 			);
 		}
 
