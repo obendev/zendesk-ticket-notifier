@@ -6,12 +6,15 @@
 // The interval in milliseconds for how often to check for new tickets.
 export const POLLING_INTERVAL_MS: number = 15_000; // 15 seconds
 
+// --- Search Query Settings ---
 // The user-facing labels of the custom statuses to notify for.
-// `as const` makes this a readonly tuple for improved type safety.
-export const TARGET_STATUS_LABELS = ["New", "Triage"] as const;
+export const TARGET_STATUS_LABELS: readonly string[] = [];
 
-// The base part of the search query. Additional filters will be added dynamically.
-export const BASE_SEARCH_QUERY: string = "tags:plesk_emea";
+// A list of tags to include in the search query.
+export const TARGET_TAGS: readonly string[] = [];
+
+// The base part of the search query for any other static filters.
+export const BASE_SEARCH_QUERY: string = "";
 
 // --- Storage Settings ---
 // The key used to store notified ticket IDs in sessionStorage.

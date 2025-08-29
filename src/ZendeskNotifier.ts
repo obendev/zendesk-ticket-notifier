@@ -5,6 +5,7 @@ import {
 	POLLING_INTERVAL_MS,
 	RETRY_DELAY_MS,
 	TARGET_STATUS_LABELS,
+	TARGET_TAGS,
 	ZENDESK_TICKET_URL_BASE,
 } from "./config.ts";
 import {
@@ -106,8 +107,13 @@ export class ZendeskNotifier {
 
 	/**
 	 * Fetches custom statuses and filters them to find the IDs of target statuses.
+	 * Returns an empty array if no labels are specified.
 	 */
 	private async fetchAndFilterStatusIds(): Promise<number[]> {
+		if (TARGET_STATUS_LABELS.length === 0) {
+			return [];
+		}
+
 		const statuses = await this.api.fetchAllCustomStatuses();
 		const lowerCaseLabels = TARGET_STATUS_LABELS.map((l) => l.toLowerCase());
 
@@ -116,7 +122,10 @@ export class ZendeskNotifier {
 		);
 
 		if (targetStatuses.length === 0) {
-			throw new Error("Could not find any of the target custom status IDs.");
+			console.warn(
+				"[Notifier] Could not find any of the target custom status IDs for the given labels.",
+			);
+			return [];
 		}
 
 		console.log("[Notifier] Successfully fetched target status IDs:");
@@ -184,13 +193,34 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Builds the final search query string.
+	 * Builds the final search query by combining base query, tags, and status IDs.
+	 * Throws an error if the resulting query is empty.
 	 */
 	private buildSearchQuery(statusIds: number[]): void {
-		const statusQueryPart = statusIds
-			.map((id) => `custom_status_id:${id}`)
-			.join(" ");
-		this.searchQuery = `${BASE_SEARCH_QUERY} ${statusQueryPart}`;
+		const queryParts: string[] = [];
+
+		if (BASE_SEARCH_QUERY) {
+			queryParts.push(BASE_SEARCH_QUERY);
+		}
+
+		if (TARGET_TAGS.length > 0) {
+			queryParts.push(`tags:${TARGET_TAGS.join(",")}`);
+		}
+
+		if (statusIds.length > 0) {
+			const statusQueryPart = statusIds
+				.map((id) => `custom_status_id:${id}`)
+				.join(" ");
+			queryParts.push(statusQueryPart);
+		}
+
+		if (queryParts.length === 0) {
+			throw new Error(
+				"Search query is empty. Please set BASE_SEARCH_QUERY, TARGET_TAGS, or TARGET_STATUS_LABELS in the config.",
+			);
+		}
+
+		this.searchQuery = queryParts.join(" ");
 	}
 
 	/**
