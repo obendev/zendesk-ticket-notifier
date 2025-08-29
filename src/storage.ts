@@ -1,9 +1,15 @@
 import { SESSION_STORAGE_KEY } from "./config.ts";
 
 /**
+ * Defines the shape of the data stored in sessionStorage.
+ * It's an array of tuples, where each tuple is [ticketId, dateString].
+ */
+type StoredNotifiedTickets = [number, string][];
+
+/**
  * Type guard to check if the parsed data from sessionStorage is valid.
  */
-function isValidSessionData(data: unknown): data is [number, string][] {
+function isValidSessionData(data: unknown): data is StoredNotifiedTickets {
 	return (
 		Array.isArray(data) &&
 		data.every(
@@ -23,7 +29,7 @@ export function loadNotifiedTicketsFromSession(): Map<number, Date> {
 	try {
 		const storedData = sessionStorage.getItem(SESSION_STORAGE_KEY);
 		if (storedData) {
-			const parsedData = JSON.parse(storedData);
+			const parsedData: unknown = JSON.parse(storedData);
 
 			if (!isValidSessionData(parsedData)) {
 				throw new Error("Stored session data has an invalid format.");
