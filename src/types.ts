@@ -6,16 +6,16 @@
  * Represents a custom status object from the Zendesk API.
  */
 export interface ZendeskCustomStatus {
-	id: number;
-	agent_label: string;
+	readonly id: number;
+	readonly agent_label: string;
 }
 
 /**
  * Represents a simplified ticket search result object from the Zendesk API.
  */
 export interface ZendeskTicketSearchResult {
-	id: number;
-	subject: string;
-	custom_status_id: number;
-	status: "new" | "open";
+	readonly id: number;
+	readonly subject: string;
+	readonly custom_status_id: number;
+	readonly status: "new" | "open";
 }
