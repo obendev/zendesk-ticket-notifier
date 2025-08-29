@@ -10,6 +10,8 @@ import type {
  */
 export class ApiError extends Error {
 	public override readonly name = "ApiError";
+	public readonly status: number | undefined;
+	public readonly body: unknown;
 
 	/**
 	 * Creates an instance of ApiError.
@@ -17,12 +19,10 @@ export class ApiError extends Error {
 	 * @param status The HTTP status code, if applicable.
 	 * @param body The raw response body, if applicable.
 	 */
-	public constructor(
-		message: string,
-		public readonly status?: number,
-		public readonly body?: unknown,
-	) {
+	public constructor(message: string, status?: number, body?: unknown) {
 		super(message);
+		this.status = status;
+		this.body = body;
 	}
 }
 

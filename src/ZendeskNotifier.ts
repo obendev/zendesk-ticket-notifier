@@ -22,12 +22,14 @@ export class ZendeskNotifier {
 	private searchQuery = "";
 	private pollingIntervalId: number | undefined;
 	private readonly notifiedTickets = new Map<number, Date>();
+	private readonly api: ZendeskApiClient;
 
 	/**
 	 * Creates an instance of ZendeskNotifier.
 	 * @param api The Zendesk API client instance.
 	 */
-	public constructor(private readonly api: ZendeskApiClient) {
+	public constructor(api: ZendeskApiClient) {
+		this.api = api;
 		this.notifiedTickets = loadNotifiedTicketsFromSession();
 		if (this.notifiedTickets.size > 0) {
 			console.info(
