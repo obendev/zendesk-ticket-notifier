@@ -264,7 +264,9 @@ export class ZendeskNotifier {
 	 * Requests permission to send notifications.
 	 */
 	private static async requestNotificationPermission(): Promise<void> {
-		if (Notification.permission === "granted") return;
+		if (Notification.permission === "granted") {
+			return;
+		}
 		if (Notification.permission === "denied") {
 			throw new Error("Notification permission has been explicitly denied.");
 		}
