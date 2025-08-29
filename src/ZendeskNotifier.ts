@@ -20,7 +20,7 @@ import type { ZendeskTicketSearchResult } from "./types.ts";
 export class ZendeskNotifier {
 	private searchQuery = "";
 	private pollingIntervalId: number | undefined;
-	private notifiedTickets = new Map<number, Date>();
+	private readonly notifiedTickets = new Map<number, Date>();
 
 	/**
 	 * Creates an instance of ZendeskNotifier.
