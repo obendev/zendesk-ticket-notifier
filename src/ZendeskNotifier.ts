@@ -103,8 +103,12 @@ export class ZendeskNotifier {
 	 */
 	private async performInitializationSteps(): Promise<void> {
 		await ZendeskNotifier.requestNotificationPermission();
-		const targetStatusIds = await this.fetchAndFilterStatusIds();
-		const targetGroupId = await this.fetchAndFindGroupId();
+
+		const [targetStatusIds, targetGroupId] = await Promise.all([
+			this.fetchAndFilterStatusIds(),
+			this.fetchAndFindGroupId(),
+		]);
+
 		this.buildSearchQuery(targetStatusIds, targetGroupId);
 		console.info("[Notifier] Using dynamic search query:", this.searchQuery);
 	}
