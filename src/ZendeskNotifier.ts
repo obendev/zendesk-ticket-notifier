@@ -312,56 +312,46 @@ export class ZendeskNotifier {
 	 * If multiple tickets are new, it shows a summary notification.
 	 */
 	private notifyBatch(tickets: ZendeskTicketSearchResult[]): void {
-		if (tickets.length === 0) {
-			return;
-		}
+		if (!tickets.length) return;
 
-		for (const ticket of tickets) {
-			this.saveNotifiedTicket(ticket.id);
-		}
+		// Add all IDs first, then persist once
+		for (const t of tickets) this.notifiedTickets.set(t.id, new Date());
+		this.storage.save(this.notifiedTickets);
 
 		if (tickets.length === 1) {
-			const ticket = tickets[0];
-			if (!ticket) {
-				return;
-			}
-			const notification = this.notifier.create(`New Ticket: #${ticket.id}`, {
+			const ticket = tickets[0]!;
+			const n = this.notifier.create(`New Ticket: #${ticket.id}`, {
 				body: ticket.subject,
 				requireInteraction: false,
 				tag: `zendesk-ticket-${ticket.id}`,
 			});
-
-			notification.onclick = () => {
+			n.onclick = () => {
 				window.open(
 					`${ZENDESK_TICKET_URL_BASE}${ticket.id}`,
 					"_blank",
 					"noopener",
 				);
-				notification.close();
+				n.close();
 			};
 			console.log(
 				`[Notifier] Notification sent for ticket #${ticket.id}: "${ticket.subject}"`,
 			);
 		} else {
 			const title = `${tickets.length} new tickets`;
-			const topTickets = tickets.slice(0, 5);
-			let body = topTickets.map((t) => `#${t.id} — ${t.subject}`).join("\n");
-
-			if (tickets.length > 5) {
-				body += `\n…and ${tickets.length - 5} more`;
-			}
-
-			const notification = this.notifier.create(title, {
+			const bodyLines = tickets
+				.slice(0, 5)
+				.map((t) => `#${t.id} — ${t.subject}`);
+			const body =
+				bodyLines.join("\n") +
+				(tickets.length > 5 ? `\n…and ${tickets.length - 5} more` : "");
+			const n = this.notifier.create(title, {
 				body,
 				tag: "zendesk-ticket-batch",
 			});
-
-			notification.onclick = () => {
-				// This URL should point to a view of new/recent tickets.
+			n.onclick = () => {
 				window.open("/agent/filters/recent", "_blank", "noopener");
-				notification.close();
+				n.close();
 			};
-
 			console.log(
 				`[Notifier] Sent summary notification for ${tickets.length} new tickets.`,
 			);
