@@ -223,7 +223,6 @@ export class ZendeskNotifier {
 	 * The main polling function that fetches and processes tickets.
 	 */
 	private async poll(): Promise<void> {
-		// Gate to prevent concurrent executions.
 		if (this.isPolling) {
 			console.warn(
 				"[Notifier] Skipping poll run as a previous one is still active.",
@@ -241,39 +240,75 @@ export class ZendeskNotifier {
 
 			if (newTickets.length > 0) {
 				console.log(`[Notifier] Found ${newTickets.length} new tickets.`);
-				for (const ticket of newTickets) {
-					this.notify(ticket);
-				}
+				this.notifyBatch(newTickets);
 			} else {
 				console.log("[Notifier] Check complete. No new tickets found.");
 			}
-		} catch (error) {
-			console.error("[Notifier] Failed to poll for new tickets:", error);
 		} finally {
-			// Always release the lock.
 			this.isPolling = false;
 		}
 	}
 
 	/**
-	 * Creates and dispatches a browser notification for a ticket.
+	 * Creates and dispatches a browser notification for a batch of tickets.
+	 * If only one ticket is new, it shows a specific notification.
+	 * If multiple tickets are new, it shows a summary notification.
 	 */
-	private notify(ticket: ZendeskTicketSearchResult): void {
-		this.saveNotifiedTicket(ticket.id);
+	private notifyBatch(tickets: ZendeskTicketSearchResult[]): void {
+		if (tickets.length === 0) {
+			return;
+		}
 
-		const notification = new Notification(`New Ticket: #${ticket.id}`, {
-			body: ticket.subject,
-			tag: `zendesk-ticket-${ticket.id}`,
-		});
+		for (const ticket of tickets) {
+			this.saveNotifiedTicket(ticket.id);
+		}
 
-		notification.onclick = () => {
-			window.open(`${ZENDESK_TICKET_URL_BASE}${ticket.id}`, "_blank");
-			notification.close();
-		};
+		if (tickets.length === 1) {
+			const ticket = tickets[0];
+			if (!ticket) {
+				return;
+			}
+			const notification = new Notification(`New Ticket: #${ticket.id}`, {
+				body: ticket.subject,
+				requireInteraction: false,
+				tag: `zendesk-ticket-${ticket.id}`,
+			});
 
-		console.log(
-			`[Notifier] Notification sent for ticket #${ticket.id}: "${ticket.subject}"`,
-		);
+			notification.onclick = () => {
+				window.open(
+					`${ZENDESK_TICKET_URL_BASE}${ticket.id}`,
+					"_blank",
+					"noopener",
+				);
+				notification.close();
+			};
+			console.log(
+				`[Notifier] Notification sent for ticket #${ticket.id}: "${ticket.subject}"`,
+			);
+		} else {
+			const title = `${tickets.length} new tickets`;
+			const topTickets = tickets.slice(0, 5);
+			let body = topTickets.map((t) => `#${t.id} — ${t.subject}`).join("\n");
+
+			if (tickets.length > 5) {
+				body += `\n…and ${tickets.length - 5} more`;
+			}
+
+			const notification = new Notification(title, {
+				body,
+				tag: "zendesk-ticket-batch",
+			});
+
+			notification.onclick = () => {
+				// This URL should point to a view of new/recent tickets.
+				window.open("/agent/filters/recent", "_blank", "noopener");
+				notification.close();
+			};
+
+			console.log(
+				`[Notifier] Sent summary notification for ${tickets.length} new tickets.`,
+			);
+		}
 	}
 
 	/**
@@ -320,19 +355,30 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Requests permission to send notifications.
+	 * Requests permission to send notifications gracefully.
+	 * It no longer throws an error if permission is denied.
 	 */
 	private static async requestNotificationPermission(): Promise<void> {
 		if (Notification.permission === "granted") {
 			return;
 		}
 		if (Notification.permission === "denied") {
-			throw new Error("Notification permission has been explicitly denied.");
+			console.warn(
+				"[Notifier] Notification permission has been explicitly denied. The notifier will work without system notifications.",
+			);
+			return;
 		}
-		const permission = await Notification.requestPermission();
-		if (permission !== "granted") {
-			throw new Error(
-				`Notification permission was not granted (${permission}).`,
+		try {
+			const permission = await Notification.requestPermission();
+			if (permission !== "granted") {
+				console.warn(
+					`[Notifier] Notification permission was not granted (${permission}). The notifier will work without system notifications.`,
+				);
+			}
+		} catch (error) {
+			console.error(
+				"[Notifier] Error requesting notification permission:",
+				error,
 			);
 		}
 	}
