@@ -85,6 +85,12 @@ export class ZendeskNotifier {
 	 * Initializes the notifier and starts the polling loop.
 	 */
 	public async start(): Promise<void> {
+		if (this.pollingIntervalId) {
+			console.info(
+				"[Notifier] Start called but polling is already active; ignoring.",
+			);
+			return;
+		}
 		try {
 			this.validateConfiguration();
 			console.info("[Notifier] Initializing...");
@@ -251,7 +257,10 @@ export class ZendeskNotifier {
 			return [];
 		}
 		console.table(
-			targets.map(({ id, agent_label }) => ({ ID: id, Status: agent_label })),
+			targets.map(({ id, agent_label }) => ({
+				ID: id,
+				Status: agent_label,
+			})),
 		);
 		return targets.map((s) => s.id);
 	}
