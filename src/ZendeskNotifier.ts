@@ -172,11 +172,12 @@ export class ZendeskNotifier {
 			TARGET_GROUP ||
 			TARGET_STATUS_LABELS.length > 0;
 
-					if (!hasSearchCriteria) {
+		if (!hasSearchCriteria) {
 			// Configuration error: prevents retry mechanism from engaging.
 			throw new Error(
 				"No search criteria found. Please define at least one of TARGET_STATUS_LABELS, TARGET_TAGS, or TARGET_GROUP in the src/config.ts file.",
 			);
+		}
 	}
 
 	/**
