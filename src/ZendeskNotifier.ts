@@ -265,7 +265,7 @@ export class ZendeskNotifier {
 			queryParts.push(`tags:${TARGET_TAGS.join(",")}`);
 		}
 
-		if (groupId) {
+		if (groupId !== null) {
 			queryParts.push(`group:${groupId}`);
 		}
 
