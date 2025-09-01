@@ -334,7 +334,11 @@ export class ZendeskNotifier {
 		this.storage.save(this.notifiedTickets);
 
 		if (tickets.length === 1) {
-			const ticket = tickets[0]!;
+			const ticket = tickets[0];
+			if (!ticket) {
+				return;
+			}
+
 			const n = this.notifier.create(`New Ticket: #${ticket.id}`, {
 				body: ticket.subject,
 				requireInteraction: false,
@@ -371,14 +375,6 @@ export class ZendeskNotifier {
 				`[Notifier] Sent summary notification for ${tickets.length} new tickets.`,
 			);
 		}
-	}
-
-	/**
-	 * Adds a ticket ID to the notified list and saves it to sessionStorage.
-	 */
-	private saveNotifiedTicket(ticketId: number): void {
-		this.notifiedTickets.set(ticketId, new Date());
-		this.storage.save(this.notifiedTickets);
 	}
 
 	/**
