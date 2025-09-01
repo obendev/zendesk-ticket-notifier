@@ -10,10 +10,7 @@ export class BrowserNotifier implements INotifier {
 	 * @returns A promise that resolves to the NotificationPermission state.
 	 */
 	public requestPermission(): Promise<NotificationPermission> {
-		// Return current permission if it's already denied, to avoid prompting.
-		if (Notification.permission === "denied") {
-			return Promise.resolve("denied");
-		}
+		if (Notification.permission === "denied") return Promise.resolve("denied");
 		return Notification.requestPermission();
 	}
 
@@ -24,6 +21,19 @@ export class BrowserNotifier implements INotifier {
 	 * @returns An INotification instance.
 	 */
 	public create(title: string, options: NotificationOptions): INotification {
+		if (Notification.permission !== "granted") {
+			console.warn(
+				"[Notifier] Skipping Notification.create; permission:",
+				Notification.permission,
+			);
+			// Return a no-op notification object to satisfy interface
+			return {
+				close: () => {
+					/* no-op */
+				},
+				onclick: null,
+			};
+		}
 		return new Notification(title, options);
 	}
 }
