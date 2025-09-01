@@ -222,6 +222,12 @@ export class ZendeskNotifier {
 		]);
 
 		this.buildSearchQuery(targetStatusIds, targetGroupId);
+		if (!this.searchQuery.trim()) {
+			throw new Error(
+				"[Notifier] Search query is empty after resolving statuses/groups. " +
+					"Please adjust TARGET_* config values.",
+			);
+		}
 		console.info("[Notifier] Using dynamic search query:", this.searchQuery);
 	}
 
