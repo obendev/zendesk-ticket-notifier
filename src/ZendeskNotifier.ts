@@ -45,6 +45,7 @@ export class ZendeskNotifier {
 	 */
 	public async start(): Promise<void> {
 		try {
+			this.validateConfiguration(); // Fail-fast if config is invalid.
 			console.info("[Notifier] Initializing...");
 			this.stopRequested = false; // Reset stop flag on start
 			const isInitialized = await this.initializeWithRetries();
@@ -115,6 +116,26 @@ export class ZendeskNotifier {
 					nextDelay,
 				);
 			}
+		}
+	}
+
+	/**
+	 * Performs a pre-flight check to ensure search criteria are defined.
+	 * Throws a non-retriable error if the configuration is invalid.
+	 */
+	private validateConfiguration(): void {
+		const hasSearchCriteria =
+			BASE_SEARCH_QUERY ||
+			TARGET_TAGS.length > 0 ||
+			TARGET_GROUP ||
+			TARGET_STATUS_LABELS.length > 0;
+
+		if (!hasSearchCriteria) {
+			// This is a configuration error, so we throw a standard Error
+			// to prevent the retry mechanism from engaging.
+			throw new Error(
+				"No search criteria found. Please define at least one of TARGET_STATUS_LABELS, TARGET_TAGS, or TARGET_GROUP in the src/config.ts file.",
+			);
 		}
 	}
 
@@ -309,7 +330,6 @@ export class ZendeskNotifier {
 
 	/**
 	 * Builds the final search query by combining base query, tags, statuses, and group.
-	 * Throws an error if the resulting query is empty.
 	 */
 	private buildSearchQuery(statusIds: number[], groupId: number | null): void {
 		const queryParts: string[] = [];
@@ -331,12 +351,6 @@ export class ZendeskNotifier {
 				.map((id) => `custom_status_id:${id}`)
 				.join(" ");
 			queryParts.push(statusQueryPart);
-		}
-
-		if (queryParts.length === 0) {
-			throw new Error(
-				"Search query is empty. Please set at least one search criterion in the config.",
-			);
 		}
 
 		this.searchQuery = queryParts.join(" ");
