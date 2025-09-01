@@ -99,7 +99,10 @@ export class ZendeskNotifier {
 				`[Notifier] Initialization attempt ${attempt} failed.`,
 				error,
 			);
-			if (error instanceof ApiError && attempt < MAX_INIT_RETRIES) {
+			if (
+				(error instanceof ApiError || error instanceof TypeError) &&
+				attempt < MAX_INIT_RETRIES
+			) {
 				await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
 				return this.initializeWithRetries(attempt + 1);
 			}
