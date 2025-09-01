@@ -52,10 +52,11 @@ export class ZendeskApiClient {
 
 			if (!response.ok) {
 				const errorBody = await response.text().catch(() => "");
+				const retryAfter = response.headers.get("Retry-After");
 				throw new ApiError(
 					`API request to ${endpoint} failed with status ${response.status}.`,
 					response.status,
-					errorBody,
+					{ body: errorBody, retryAfter },
 				);
 			}
 

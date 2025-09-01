@@ -41,8 +41,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Initializes the notifier by requesting permissions, fetching necessary data,
-	 * and starting the polling loop.
+	 * Initializes the notifier and starts the polling loop.
 	 */
 	public async start(): Promise<void> {
 		try {
@@ -52,16 +51,7 @@ export class ZendeskNotifier {
 
 			if (isInitialized) {
 				console.log("[Notifier] Initialization successful. Starting polling.");
-				await this.poll(); // Run once immediately.
-
-				const tick = async () => {
-					if (this.stopRequested) {
-						return;
-					}
-					await this.poll();
-					this.pollingIntervalId = setTimeout(tick, POLLING_INTERVAL_MS);
-				};
-				this.pollingIntervalId = setTimeout(tick, POLLING_INTERVAL_MS);
+				this.pollingLoop(); // Start the dedicated polling loop.
 			} else {
 				console.error(
 					"[Notifier] Failed to initialize after multiple attempts. Polling will not start.",
@@ -84,6 +74,47 @@ export class ZendeskNotifier {
 			clearTimeout(this.pollingIntervalId);
 			this.pollingIntervalId = undefined;
 			console.info("[Notifier] Polling stopped.");
+		}
+	}
+
+	/**
+	 * The main polling loop with backoff logic.
+	 */
+	private async pollingLoop(): Promise<void> {
+		if (this.stopRequested) {
+			return;
+		}
+
+		let nextDelay = POLLING_INTERVAL_MS;
+		try {
+			await this.poll();
+		} catch (error) {
+			if (
+				error instanceof ApiError &&
+				(error.status === 429 || error.status === 503)
+			) {
+				const retryAfterSeconds = Number(
+					(error.body as { retryAfter?: string })?.retryAfter,
+				);
+				const backoffMs = Number.isNaN(retryAfterSeconds)
+					? 60_000
+					: retryAfterSeconds * 1000;
+				nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
+				console.warn(
+					`[Notifier] Backing off for ${
+						nextDelay / 1000
+					}s due to API rate limiting.`,
+				);
+			} else {
+				console.error("[Notifier] Failed to poll for new tickets:", error);
+			}
+		} finally {
+			if (!this.stopRequested) {
+				this.pollingIntervalId = setTimeout(
+					() => this.pollingLoop(),
+					nextDelay,
+				);
+			}
 		}
 	}
 
