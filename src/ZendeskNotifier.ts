@@ -20,9 +20,11 @@ import type { ZendeskTicketSearchResult } from "./types.ts";
  */
 export class ZendeskNotifier {
 	private searchQuery = "";
-	private pollingIntervalId: number | undefined;
+	private pollingIntervalId: ReturnType<typeof setTimeout> | undefined;
 	private readonly notifiedTickets = new Map<number, Date>();
 	private readonly api: ZendeskApiClient;
+	private isPolling = false;
+	private stopRequested = false;
 
 	/**
 	 * Creates an instance of ZendeskNotifier.
@@ -40,20 +42,26 @@ export class ZendeskNotifier {
 
 	/**
 	 * Initializes the notifier by requesting permissions, fetching necessary data,
-	 * and starting the polling interval.
+	 * and starting the polling loop.
 	 */
 	public async start(): Promise<void> {
 		try {
 			console.info("[Notifier] Initializing...");
+			this.stopRequested = false; // Reset stop flag on start
 			const isInitialized = await this.initializeWithRetries();
 
 			if (isInitialized) {
 				console.log("[Notifier] Initialization successful. Starting polling.");
 				await this.poll(); // Run once immediately.
-				this.pollingIntervalId = window.setInterval(
-					() => this.poll(),
-					POLLING_INTERVAL_MS,
-				);
+
+				const tick = async () => {
+					if (this.stopRequested) {
+						return;
+					}
+					await this.poll();
+					this.pollingIntervalId = setTimeout(tick, POLLING_INTERVAL_MS);
+				};
+				this.pollingIntervalId = setTimeout(tick, POLLING_INTERVAL_MS);
 			} else {
 				console.error(
 					"[Notifier] Failed to initialize after multiple attempts. Polling will not start.",
@@ -71,8 +79,9 @@ export class ZendeskNotifier {
 	 * Stops the background polling for new tickets.
 	 */
 	public stop(): void {
+		this.stopRequested = true;
 		if (this.pollingIntervalId) {
-			clearInterval(this.pollingIntervalId);
+			clearTimeout(this.pollingIntervalId);
 			this.pollingIntervalId = undefined;
 			console.info("[Notifier] Polling stopped.");
 		}
@@ -180,8 +189,17 @@ export class ZendeskNotifier {
 	 * The main polling function that fetches and processes tickets.
 	 */
 	private async poll(): Promise<void> {
-		console.info("[Notifier] Checking for new tickets...");
+		// Gate to prevent concurrent executions.
+		if (this.isPolling) {
+			console.warn(
+				"[Notifier] Skipping poll run as a previous one is still active.",
+			);
+			return;
+		}
+
+		this.isPolling = true;
 		try {
+			console.info("[Notifier] Checking for new tickets...");
 			const foundTickets = await this.api.searchForTickets(this.searchQuery);
 			const newTickets = foundTickets.filter(
 				(ticket) => !this.notifiedTickets.has(ticket.id),
@@ -197,6 +215,9 @@ export class ZendeskNotifier {
 			}
 		} catch (error) {
 			console.error("[Notifier] Failed to poll for new tickets:", error);
+		} finally {
+			// Always release the lock.
+			this.isPolling = false;
 		}
 	}
 
