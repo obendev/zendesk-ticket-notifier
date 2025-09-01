@@ -31,6 +31,9 @@ export const MAX_INIT_RETRIES: number = 3;
 export const RETRY_DELAY_MS: number = 2000;
 
 // --- Zendesk API and URL Settings ---
+// The timeout in milliseconds for API requests.
+export const API_REQUEST_TIMEOUT_MS = 15_000;
+
 // Base path for constructing ticket URLs.
 export const ZENDESK_TICKET_URL_BASE = "/agent/tickets/";
 

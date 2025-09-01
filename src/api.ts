@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "./config.ts";
+import { API_ENDPOINTS, API_REQUEST_TIMEOUT_MS } from "./config.ts";
 import type {
 	ZendeskCustomStatus,
 	ZendeskGroup,
@@ -70,7 +70,10 @@ export class ZendeskApiClient {
 		options: RequestInit = {},
 	): Promise<T> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 15_000);
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			API_REQUEST_TIMEOUT_MS,
+		);
 
 		try {
 			const response = await this.fetchFn(endpoint, {
