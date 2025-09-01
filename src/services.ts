@@ -1,4 +1,4 @@
-import type { INotification, INotifier } from "./types.ts";
+import type { INetworkStatus, INotification, INotifier } from "./types.ts";
 
 /**
  * A concrete implementation of INotifier that uses the browser's Notification API.
@@ -14,5 +14,14 @@ export class BrowserNotifier implements INotifier {
 
 	public create(title: string, options: NotificationOptions): INotification {
 		return new Notification(title, options);
+	}
+}
+
+/**
+ * A concrete implementation of INetworkStatus that uses the browser's online/offline events.
+ */
+export class BrowserNetworkStatus implements INetworkStatus {
+	public on(event: "online" | "offline", callback: () => void): void {
+		window.addEventListener(event, callback);
 	}
 }

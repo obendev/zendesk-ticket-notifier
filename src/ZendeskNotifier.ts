@@ -10,6 +10,7 @@ import {
 	ZENDESK_TICKET_URL_BASE,
 } from "./config.ts";
 import type {
+	INetworkStatus,
 	INotifier,
 	IStorage,
 	ZendeskTicketSearchResult,
@@ -33,21 +34,27 @@ export class ZendeskNotifier {
 	 * @param api The Zendesk API client instance.
 	 * @param notifier The notification service instance.
 	 * @param storage The storage service instance.
+	 * @param networkStatus The network status monitoring instance.
 	 */
 	public constructor(
 		api: ZendeskApiClient,
 		notifier: INotifier,
 		storage: IStorage<number, Date>,
+		networkStatus: INetworkStatus,
 	) {
 		this.api = api;
 		this.notifier = notifier;
 		this.storage = storage;
 		this.notifiedTickets = this.storage.load();
+
 		if (this.notifiedTickets.size > 0) {
 			console.info(
 				`[Notifier] Restored ${this.notifiedTickets.size} notified tickets from session.`,
 			);
 		}
+
+		networkStatus.on("online", () => this.start());
+		networkStatus.on("offline", () => this.stop());
 	}
 
 	/**

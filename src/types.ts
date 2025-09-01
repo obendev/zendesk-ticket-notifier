@@ -53,3 +53,10 @@ export interface IStorage<K, V> {
 	save(data: Map<K, V>): void;
 	load(): Map<K, V>;
 }
+
+/**
+ * Interface for a service that monitors the browser's online status.
+ */
+export interface INetworkStatus {
+	on(event: "online" | "offline", callback: () => void): void;
+}
