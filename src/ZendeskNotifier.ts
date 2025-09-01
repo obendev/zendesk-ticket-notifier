@@ -370,28 +370,24 @@ export class ZendeskNotifier {
 	 * Builds the final search query by combining base query, tags, statuses, and group.
 	 */
 	private buildSearchQuery(statusIds: number[], groupId: number | null): void {
-		const queryParts: string[] = [];
+		const qp: string[] = [];
 
-		if (BASE_SEARCH_QUERY) {
-			queryParts.push(BASE_SEARCH_QUERY);
-		}
+		if (BASE_SEARCH_QUERY) qp.push(BASE_SEARCH_QUERY);
+
+		const safe = (s: string) =>
+			/[\s:"\\]/.test(s) ? `"${s.replace(/(["\\])/g, "\\$1")}"` : s;
 
 		if (TARGET_TAGS.length > 0) {
-			queryParts.push(`tags:${TARGET_TAGS.join(",")}`);
+			qp.push(`tags:${TARGET_TAGS.map(safe).join(",")}`);
 		}
 
-		if (groupId !== null) {
-			queryParts.push(`group:${groupId}`);
-		}
+		if (groupId !== null) qp.push(`group:${groupId}`);
 
 		if (statusIds.length > 0) {
-			const statusQueryPart = statusIds
-				.map((id) => `custom_status_id:${id}`)
-				.join(" ");
-			queryParts.push(statusQueryPart);
+			qp.push(statusIds.map((id) => `custom_status_id:${id}`).join(" "));
 		}
 
-		this.searchQuery = queryParts.join(" ");
+		this.searchQuery = qp.join(" ");
 	}
 
 	/**
