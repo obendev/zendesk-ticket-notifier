@@ -136,12 +136,19 @@ export class ZendeskNotifier {
 				error instanceof ApiError &&
 				(error.status === 429 || error.status === 503)
 			) {
-				const retryAfterSeconds = Number(
-					(error.body as { retryAfter?: string })?.retryAfter,
-				);
-				const backoffMs = Number.isNaN(retryAfterSeconds)
-					? 60_000
-					: retryAfterSeconds * 1000;
+				const ra = (error.body as { retryAfter?: string })?.retryAfter;
+				let backoffMs = 60_000;
+				if (ra) {
+					const asNum = Number(ra);
+					if (!Number.isNaN(asNum)) {
+						backoffMs = asNum * 1000;
+					} else {
+						const dateMs = Date.parse(ra);
+						if (!Number.isNaN(dateMs)) {
+							backoffMs = Math.max(0, dateMs - Date.now());
+						}
+					}
+				}
 				nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
 				console.warn(
 					`[Notifier] Backing off for ${
