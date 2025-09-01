@@ -20,13 +20,37 @@ import type {
  * A class to handle polling for and notifying about new Zendesk tickets.
  */
 export class ZendeskNotifier {
+	/**
+	 * The current search query string used for Zendesk API requests.
+	 */
 	private searchQuery = "";
+	/**
+	 * Stores the ID of the polling interval timer, allowing it to be cleared.
+	 */
 	private pollingIntervalId: ReturnType<typeof setTimeout> | undefined;
+	/**
+	 * A map of ticket IDs that have already been notified, along with the notification timestamp.
+	 */
 	private readonly notifiedTickets: Map<number, Date>;
+	/**
+	 * The Zendesk API client for making requests.
+	 */
 	private readonly api: ZendeskApiClient;
+	/**
+	 * The service responsible for displaying notifications.
+	 */
 	private readonly notifier: INotifier;
+	/**
+	 * The storage service for persisting notified ticket IDs.
+	 */
 	private readonly storage: IStorage<number, Date>;
+	/**
+	 * Flag indicating if a polling operation is currently in progress.
+	 */
 	private isPolling = false;
+	/**
+	 * Flag indicating if a stop request has been made, used to gracefully exit polling loops.
+	 */
 	private stopRequested = false;
 
 	/**
@@ -62,14 +86,14 @@ export class ZendeskNotifier {
 	 */
 	public async start(): Promise<void> {
 		try {
-			this.validateConfiguration(); // Fail-fast if config is invalid.
+			this.validateConfiguration();
 			console.info("[Notifier] Initializing...");
-			this.stopRequested = false; // Reset stop flag on start
+			this.stopRequested = false;
 			const isInitialized = await this.initializeWithRetries();
 
 			if (isInitialized) {
 				console.log("[Notifier] Initialization successful. Starting polling.");
-				this.pollingLoop(); // Start the dedicated polling loop.
+				this.pollingLoop();
 			} else {
 				console.error(
 					"[Notifier] Failed to initialize after multiple attempts. Polling will not start.",
@@ -96,7 +120,8 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * The main polling loop with backoff logic.
+	 * Executes the main polling loop, fetching and processing tickets with backoff logic.
+	 * It respects the `stopRequested` flag for graceful termination.
 	 */
 	private async pollingLoop(): Promise<void> {
 		if (this.stopRequested) {
@@ -147,13 +172,11 @@ export class ZendeskNotifier {
 			TARGET_GROUP ||
 			TARGET_STATUS_LABELS.length > 0;
 
-		if (!hasSearchCriteria) {
-			// This is a configuration error, so we throw a standard Error
-			// to prevent the retry mechanism from engaging.
+					if (!hasSearchCriteria) {
+			// Configuration error: prevents retry mechanism from engaging.
 			throw new Error(
 				"No search criteria found. Please define at least one of TARGET_STATUS_LABELS, TARGET_TAGS, or TARGET_GROUP in the src/config.ts file.",
 			);
-		}
 	}
 
 	/**

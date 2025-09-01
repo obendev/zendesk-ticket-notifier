@@ -10,8 +10,17 @@ import type {
  */
 export class ApiError extends Error {
 	public override readonly name = "ApiError";
+	/**
+	 * The HTTP status code associated with the error, if applicable.
+	 */
 	public readonly status: number | undefined;
+	/**
+	 * The raw response body from the API, if available.
+	 */
 	public readonly body: unknown;
+	/**
+	 * The underlying cause of the error, if any.
+	 */
 	public override cause: unknown;
 
 	/**
@@ -37,8 +46,15 @@ export class ApiError extends Error {
  * A client to interact with the Zendesk API.
  */
 export class ZendeskApiClient {
+	/**
+	 * The fetch function to use for making HTTP requests.
+	 */
 	private readonly fetchFn: typeof fetch;
 
+	/**
+	 * Creates an instance of ZendeskApiClient.
+	 * @param fetchFn The fetch function to use (e.g., `window.fetch`).
+	 */
 	public constructor(fetchFn: typeof fetch) {
 		this.fetchFn = fetchFn;
 	}

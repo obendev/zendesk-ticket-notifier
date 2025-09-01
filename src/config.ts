@@ -4,7 +4,7 @@
 
 // --- Polling Settings ---
 // The interval in milliseconds for how often to check for new tickets.
-export const POLLING_INTERVAL_MS: number = 15_000; // 15 seconds
+export const POLLING_INTERVAL_MS: number = 15_000;
 
 // --- Search Query Settings ---
 // The user-facing labels of the custom statuses to notify for.
@@ -28,7 +28,7 @@ export const SESSION_STORAGE_KEY = "zendeskNotifiedTicketIds";
 export const MAX_INIT_RETRIES: number = 3;
 
 // The delay in milliseconds between each retry attempt.
-export const RETRY_DELAY_MS: number = 2000; // 2 seconds
+export const RETRY_DELAY_MS: number = 2000;
 
 // --- Zendesk API and URL Settings ---
 // Base path for constructing ticket URLs.
