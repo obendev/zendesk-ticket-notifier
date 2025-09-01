@@ -36,31 +36,54 @@ export class ZendeskApiClient {
 	 * @param options Optional standard fetch options (e.g., method, headers, body).
 	 * @returns A promise that resolves to the JSON response.
 	 */
-	private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-		const response = await fetch(endpoint, options);
-
-		if (!response.ok) {
-			const errorBody = await response.text();
-			throw new ApiError(
-				`API request to ${endpoint} failed with status ${response.status}.`,
-				response.status,
-				errorBody,
-			);
-		}
-
-		// Handle cases where the response might be empty
-		if (response.status === 204 /* No Content */) {
-			return {} as T;
-		}
+	private async fetch<T>(
+		endpoint: string,
+		options: RequestInit = {},
+	): Promise<T> {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
 		try {
+			const response = await fetch(endpoint, {
+				headers: { Accept: "application/json", ...options.headers },
+				signal: controller.signal,
+				...options,
+			});
+
+			if (!response.ok) {
+				const errorBody = await response.text().catch(() => "");
+				throw new ApiError(
+					`API request to ${endpoint} failed with status ${response.status}.`,
+					response.status,
+					errorBody,
+				);
+			}
+
+			// Handle cases where the response might be empty
+			if (response.status === 204 /* No Content */) {
+				return {} as T;
+			}
+
+			// Defensive check for content type before parsing JSON.
+			const contentType = response.headers.get("content-type") || "";
+			if (!contentType.includes("application/json")) {
+				const textBody = await response.text();
+				throw new ApiError(
+					`Expected JSON response but got ${contentType} from ${endpoint}.`,
+					response.status,
+					textBody,
+				);
+			}
 			return await response.json();
-		} catch {
-			// Throw a custom error if JSON parsing fails
-			throw new ApiError(
-				`Failed to parse JSON from ${endpoint}.`,
-				response.status,
-			);
+		} catch (error) {
+			if (error instanceof DOMException && error.name === "AbortError") {
+				throw new ApiError(`Request to ${endpoint} timed out.`);
+			}
+			// Re-throw other errors (e.g., network failures).
+			throw error;
+		} finally {
+			// Clean up the timeout in all cases.
+			clearTimeout(timeoutId);
 		}
 	}
 
