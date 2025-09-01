@@ -1,4 +1,5 @@
 import { SESSION_STORAGE_KEY } from "./config.ts";
+import type { IStorage } from "./types.ts";
 
 /**
  * Defines the shape of the data stored in sessionStorage.
@@ -23,45 +24,48 @@ function isValidSessionData(data: unknown): data is StoredNotifiedTickets {
 }
 
 /**
- * Loads the list of already-notified tickets from sessionStorage.
+ * A concrete implementation of IStorage that uses the browser's sessionStorage.
  */
-export function loadNotifiedTicketsFromSession(): Map<number, Date> {
-	try {
-		const storedData = sessionStorage.getItem(SESSION_STORAGE_KEY);
-		if (storedData) {
-			const parsedData: unknown = JSON.parse(storedData);
+export class SessionStorage implements IStorage<number, Date> {
+	/**
+	 * Loads the list of already-notified tickets from sessionStorage.
+	 */
+	public load(): Map<number, Date> {
+		try {
+			const storedData = sessionStorage.getItem(SESSION_STORAGE_KEY);
+			if (storedData) {
+				const parsedData: unknown = JSON.parse(storedData);
 
-			if (!isValidSessionData(parsedData)) {
-				throw new Error("Stored session data has an invalid format.");
+				if (!isValidSessionData(parsedData)) {
+					throw new Error("Stored session data has an invalid format.");
+				}
+
+				return new Map(
+					parsedData.map(([id, dateStr]) => [id, new Date(dateStr)]),
+				);
 			}
+		} catch (error) {
+			console.error(
+				"[Storage] Failed to load notified tickets from session storage. Starting fresh.",
+				error,
+			);
+			sessionStorage.removeItem(SESSION_STORAGE_KEY);
+		}
+		return new Map();
+	}
 
-			return new Map(
-				parsedData.map(([id, dateStr]) => [id, new Date(dateStr)]),
+	/**
+	 * Saves the map of notified tickets to sessionStorage.
+	 */
+	public save(notifiedTickets: Map<number, Date>): void {
+		try {
+			const ticketArray = Array.from(notifiedTickets.entries());
+			sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(ticketArray));
+		} catch (error) {
+			console.error(
+				"[Storage] Failed to save notified tickets to session storage.",
+				error,
 			);
 		}
-	} catch (error) {
-		console.error(
-			"[Storage] Failed to load notified tickets from session storage. Starting fresh.",
-			error,
-		);
-		sessionStorage.removeItem(SESSION_STORAGE_KEY);
-	}
-	return new Map();
-}
-
-/**
- * Saves the map of notified tickets to sessionStorage.
- */
-export function saveNotifiedTicketsToSession(
-	notifiedTickets: Map<number, Date>,
-): void {
-	try {
-		const ticketArray = Array.from(notifiedTickets.entries());
-		sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(ticketArray));
-	} catch (error) {
-		console.error(
-			"[Storage] Failed to save notified tickets to session storage.",
-			error,
-		);
 	}
 }

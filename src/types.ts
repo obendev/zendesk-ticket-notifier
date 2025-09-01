@@ -27,3 +27,29 @@ export interface ZendeskTicketSearchResult {
 	readonly custom_status_id: number;
 	readonly status: string;
 }
+
+// --- Service Interfaces for Dependency Injection ---
+
+/**
+ * Interface for a service that can create notifications.
+ */
+export interface INotifier {
+	requestPermission(): Promise<NotificationPermission>;
+	create(title: string, options: NotificationOptions): INotification;
+}
+
+/**
+ * Interface for a notification instance, abstracting the global Notification class.
+ */
+export interface INotification {
+	onclick: ((this: Notification, ev: Event) => unknown) | null;
+	close(): void;
+}
+
+/**
+ * Interface for a key-value storage mechanism.
+ */
+export interface IStorage<K, V> {
+	save(data: Map<K, V>): void;
+	load(): Map<K, V>;
+}

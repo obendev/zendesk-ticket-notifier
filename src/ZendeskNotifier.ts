@@ -9,11 +9,11 @@ import {
 	TARGET_TAGS,
 	ZENDESK_TICKET_URL_BASE,
 } from "./config.ts";
-import {
-	loadNotifiedTicketsFromSession,
-	saveNotifiedTicketsToSession,
-} from "./storage.ts";
-import type { ZendeskTicketSearchResult } from "./types.ts";
+import type {
+	INotifier,
+	IStorage,
+	ZendeskTicketSearchResult,
+} from "./types.ts";
 
 /**
  * A class to handle polling for and notifying about new Zendesk tickets.
@@ -21,18 +21,28 @@ import type { ZendeskTicketSearchResult } from "./types.ts";
 export class ZendeskNotifier {
 	private searchQuery = "";
 	private pollingIntervalId: ReturnType<typeof setTimeout> | undefined;
-	private readonly notifiedTickets = new Map<number, Date>();
+	private readonly notifiedTickets: Map<number, Date>;
 	private readonly api: ZendeskApiClient;
+	private readonly notifier: INotifier;
+	private readonly storage: IStorage<number, Date>;
 	private isPolling = false;
 	private stopRequested = false;
 
 	/**
 	 * Creates an instance of ZendeskNotifier.
 	 * @param api The Zendesk API client instance.
+	 * @param notifier The notification service instance.
+	 * @param storage The storage service instance.
 	 */
-	public constructor(api: ZendeskApiClient) {
+	public constructor(
+		api: ZendeskApiClient,
+		notifier: INotifier,
+		storage: IStorage<number, Date>,
+	) {
 		this.api = api;
-		this.notifiedTickets = loadNotifiedTicketsFromSession();
+		this.notifier = notifier;
+		this.storage = storage;
+		this.notifiedTickets = this.storage.load();
 		if (this.notifiedTickets.size > 0) {
 			console.info(
 				`[Notifier] Restored ${this.notifiedTickets.size} notified tickets from session.`,
@@ -166,7 +176,7 @@ export class ZendeskNotifier {
 	 * The core steps of the initialization process.
 	 */
 	private async performInitializationSteps(): Promise<void> {
-		await ZendeskNotifier.requestNotificationPermission();
+		await this.requestNotificationPermission();
 
 		const [targetStatusIds, targetGroupId] = await Promise.all([
 			this.fetchAndFilterStatusIds(),
@@ -277,7 +287,7 @@ export class ZendeskNotifier {
 			if (!ticket) {
 				return;
 			}
-			const notification = new Notification(`New Ticket: #${ticket.id}`, {
+			const notification = this.notifier.create(`New Ticket: #${ticket.id}`, {
 				body: ticket.subject,
 				requireInteraction: false,
 				tag: `zendesk-ticket-${ticket.id}`,
@@ -303,7 +313,7 @@ export class ZendeskNotifier {
 				body += `\n…and ${tickets.length - 5} more`;
 			}
 
-			const notification = new Notification(title, {
+			const notification = this.notifier.create(title, {
 				body,
 				tag: "zendesk-ticket-batch",
 			});
@@ -325,7 +335,7 @@ export class ZendeskNotifier {
 	 */
 	private saveNotifiedTicket(ticketId: number): void {
 		this.notifiedTickets.set(ticketId, new Date());
-		saveNotifiedTicketsToSession(this.notifiedTickets);
+		this.storage.save(this.notifiedTickets);
 	}
 
 	/**
@@ -360,19 +370,14 @@ export class ZendeskNotifier {
 	 * Requests permission to send notifications gracefully.
 	 * It no longer throws an error if permission is denied.
 	 */
-	private static async requestNotificationPermission(): Promise<void> {
-		if (Notification.permission === "granted") {
-			return;
-		}
-		if (Notification.permission === "denied") {
-			console.warn(
-				"[Notifier] Notification permission has been explicitly denied. The notifier will work without system notifications.",
-			);
-			return;
-		}
+	private async requestNotificationPermission(): Promise<void> {
 		try {
-			const permission = await Notification.requestPermission();
-			if (permission !== "granted") {
+			const permission = await this.notifier.requestPermission();
+			if (permission === "denied") {
+				console.warn(
+					"[Notifier] Notification permission has been explicitly denied. The notifier will work without system notifications.",
+				);
+			} else if (permission !== "granted") {
 				console.warn(
 					`[Notifier] Notification permission was not granted (${permission}). The notifier will work without system notifications.`,
 				);

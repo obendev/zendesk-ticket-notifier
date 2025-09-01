@@ -37,6 +37,11 @@ export class ApiError extends Error {
  * A client to interact with the Zendesk API.
  */
 export class ZendeskApiClient {
+	private readonly fetchFn: typeof fetch;
+
+	public constructor(fetchFn: typeof fetch) {
+		this.fetchFn = fetchFn;
+	}
 	/**
 	 * Fetches a resource from the Zendesk API.
 	 * @param endpoint The API endpoint to fetch from.
@@ -51,7 +56,7 @@ export class ZendeskApiClient {
 		const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
 		try {
-			const response = await fetch(endpoint, {
+			const response = await this.fetchFn(endpoint, {
 				headers: { Accept: "application/json", ...options.headers },
 				signal: controller.signal,
 				...options,
