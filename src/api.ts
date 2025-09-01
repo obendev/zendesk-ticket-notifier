@@ -21,13 +21,14 @@ export class ApiError extends Error {
 	/**
 	 * The underlying cause of the error, if any.
 	 */
-	public override cause: unknown;
+	public override cause?: unknown;
 
 	/**
 	 * Creates an instance of ApiError.
 	 * @param message The error message.
 	 * @param status The HTTP status code, if applicable.
 	 * @param body The raw response body, if applicable.
+	 * @param cause The underlying cause of the error.
 	 */
 	public constructor(
 		message: string,
@@ -35,7 +36,7 @@ export class ApiError extends Error {
 		body?: unknown,
 		cause?: unknown,
 	) {
-		super(message);
+		super(message, cause !== undefined ? { cause } : undefined);
 		this.status = status;
 		this.body = body;
 		this.cause = cause;
