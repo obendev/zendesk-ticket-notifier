@@ -164,30 +164,21 @@ export class ZendeskNotifier {
 		if (TARGET_STATUS_LABELS.length === 0) {
 			return [];
 		}
-
 		const statuses = await this.api.fetchAllCustomStatuses();
-		const lowerCaseLabels = TARGET_STATUS_LABELS.map((l) => l.toLowerCase());
-
-		const targetStatuses = statuses.filter((s) =>
-			lowerCaseLabels.includes(s.agent_label.toLowerCase()),
+		const wanted = new Set(TARGET_STATUS_LABELS.map((l) => l.toLowerCase()));
+		const targets = statuses.filter((s) =>
+			wanted.has(s.agent_label.toLowerCase()),
 		);
-
-		if (targetStatuses.length === 0) {
+		if (targets.length === 0) {
 			console.warn(
-				"[Notifier] Could not find any of the target custom status IDs for the given labels.",
+				"[Notifier] No matching custom status IDs for the given labels.",
 			);
 			return [];
 		}
-
-		console.log("[Notifier] Successfully fetched target status IDs:");
 		console.table(
-			targetStatuses.map(({ agent_label, id }) => ({
-				ID: id,
-				Status: agent_label,
-			})),
+			targets.map(({ id, agent_label }) => ({ ID: id, Status: agent_label })),
 		);
-
-		return targetStatuses.map((s) => s.id);
+		return targets.map((s) => s.id);
 	}
 
 	/**
@@ -198,25 +189,22 @@ export class ZendeskNotifier {
 		if (!TARGET_GROUP) {
 			return null;
 		}
-
 		const groups = await this.api.fetchAllGroups();
-		const lowerCaseTarget = TARGET_GROUP.toLowerCase();
+		const needle = TARGET_GROUP.toLowerCase();
 
-		const targetGroup = groups.find((g) =>
-			g.name.toLowerCase().includes(lowerCaseTarget),
-		);
-
-		if (!targetGroup) {
+		// exact match
+		const g =
+			groups.find((x) => x.name.toLowerCase() === needle) ??
+			groups.find((x) => x.name.toLowerCase().startsWith(needle)) ??
+			groups.find((x) => x.name.toLowerCase().includes(needle));
+		if (!g) {
 			console.warn(
 				`[Notifier] Could not find a matching group for "${TARGET_GROUP}".`,
 			);
 			return null;
 		}
-
-		console.log("[Notifier] Successfully matched target group:");
-		console.table([{ "Group Name": targetGroup.name, ID: targetGroup.id }]);
-
-		return targetGroup.id;
+		console.table([{ "Group Name": g.name, ID: g.id }]);
+		return g.id;
 	}
 
 	/**
