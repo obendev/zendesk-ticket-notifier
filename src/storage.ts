@@ -2,13 +2,12 @@ import { SESSION_STORAGE_KEY } from "./config.ts";
 import type { IStorage } from "./types.ts";
 
 /**
- * Defines the shape of the data stored in sessionStorage.
- * It's an array of tuples, where each tuple is [ticketId, dateString].
+ * Shape of sessionStorage data: `[ticketId, dateString][]`.
  */
 type StoredNotifiedTickets = [number, string][];
 
 /**
- * Type guard to check if the parsed data from sessionStorage is valid.
+ * Type guard for `StoredNotifiedTickets`.
  */
 function isValidSessionData(data: unknown): data is StoredNotifiedTickets {
 	return (
@@ -24,11 +23,11 @@ function isValidSessionData(data: unknown): data is StoredNotifiedTickets {
 }
 
 /**
- * A concrete implementation of IStorage that uses the browser's sessionStorage.
+ * `IStorage` implementation using `sessionStorage`.
  */
 export class SessionStorage implements IStorage<number, Date> {
 	/**
-	 * Loads the list of already-notified tickets from sessionStorage.
+	 * Loads notified tickets from `sessionStorage`.
 	 */
 	public load(): Map<number, Date> {
 		try {
@@ -55,7 +54,7 @@ export class SessionStorage implements IStorage<number, Date> {
 	}
 
 	/**
-	 * Saves the map of notified tickets to sessionStorage.
+	 * Saves notified tickets to `sessionStorage`.
 	 */
 	public save(notifiedTickets: Map<number, Date>): void {
 		try {

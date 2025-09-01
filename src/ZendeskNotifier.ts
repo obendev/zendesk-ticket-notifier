@@ -17,48 +17,48 @@ import type {
 } from "./types.ts";
 
 /**
- * A class to handle polling for and notifying about new Zendesk tickets.
+ * Polls Zendesk for new tickets and sends notifications.
  */
 export class ZendeskNotifier {
 	/**
-	 * The current search query string used for Zendesk API requests.
+	 * Zendesk search query.
 	 */
 	private searchQuery = "";
 	/**
-	 * Stores the ID of the polling interval timer, allowing it to be cleared.
+	 * Interval timer ID for polling.
 	 */
 	private pollingIntervalId: ReturnType<typeof setTimeout> | undefined;
 	/**
-	 * A map of ticket IDs that have already been notified, along with the notification timestamp.
+	 * Map of notified ticket IDs to their notification timestamp.
 	 */
 	private readonly notifiedTickets: Map<number, Date>;
 	/**
-	 * The Zendesk API client for making requests.
+	 * Zendesk API client.
 	 */
 	private readonly api: ZendeskApiClient;
 	/**
-	 * The service responsible for displaying notifications.
+	 * Notification service.
 	 */
 	private readonly notifier: INotifier;
 	/**
-	 * The storage service for persisting notified ticket IDs.
+	 * Storage for notified tickets.
 	 */
 	private readonly storage: IStorage<number, Date>;
 	/**
-	 * Flag indicating if a polling operation is currently in progress.
+	 * Prevents concurrent polling.
 	 */
 	private isPolling = false;
 	/**
-	 * Flag indicating if a stop request has been made, used to gracefully exit polling loops.
+	 * Flag to gracefully stop polling.
 	 */
 	private stopRequested = false;
 
 	/**
 	 * Creates an instance of ZendeskNotifier.
-	 * @param api The Zendesk API client instance.
-	 * @param notifier The notification service instance.
-	 * @param storage The storage service instance.
-	 * @param networkStatus The network status monitoring instance.
+	 * @param api Zendesk API client.
+	 * @param notifier Notification service.
+	 * @param storage Storage for notified tickets.
+	 * @param networkStatus Network status monitor.
 	 */
 	public constructor(
 		api: ZendeskApiClient,
@@ -82,7 +82,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Initializes the notifier and starts the polling loop.
+	 * Starts the polling loop.
 	 */
 	public async start(): Promise<void> {
 		if (this.pollingIntervalId) {
@@ -114,7 +114,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Stops the background polling for new tickets.
+	 * Stops the polling loop.
 	 */
 	public stop(): void {
 		this.stopRequested = true;
@@ -126,8 +126,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Executes the main polling loop, fetching and processing tickets with backoff logic.
-	 * It respects the `stopRequested` flag for graceful termination.
+	 * Main polling loop with API rate-limiting backoff.
 	 */
 	private async pollingLoop(): Promise<void> {
 		if (this.stopRequested) {
@@ -157,9 +156,7 @@ export class ZendeskNotifier {
 				}
 				nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
 				console.warn(
-					`[Notifier] Backing off for ${
-						nextDelay / 1000
-					}s due to API rate limiting.`,
+					`[Notifier] Backing off for ${nextDelay / 1000}s due to API rate limiting.`,
 				);
 			} else {
 				console.error("[Notifier] Failed to poll for new tickets:", error);
@@ -175,8 +172,8 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Performs a pre-flight check to ensure search criteria are defined.
-	 * Throws a non-retriable error if the configuration is invalid.
+	 * Validates that search criteria are configured.
+	 * Throws if not.
 	 */
 	private validateConfiguration(): void {
 		const hasSearchCriteria =
@@ -194,7 +191,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Performs the resilient initialization process with a retry mechanism.
+	 * Initializes with retries on failure.
 	 */
 	private async initializeWithRetries(attempt = 1): Promise<boolean> {
 		try {
@@ -217,7 +214,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * The core steps of the initialization process.
+	 * Core initialization steps.
 	 */
 	private async performInitializationSteps(): Promise<void> {
 		await this.requestNotificationPermission();
@@ -238,8 +235,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Fetches custom statuses and filters them to find the IDs of target statuses.
-	 * Returns an empty array if no labels are specified.
+	 * Fetches and filters custom status IDs based on `TARGET_STATUS_LABELS`.
 	 */
 	private async fetchAndFilterStatusIds(): Promise<number[]> {
 		if (TARGET_STATUS_LABELS.length === 0) {
@@ -266,8 +262,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Fetches groups and finds the ID of the one that best matches the target group name.
-	 * Returns null if no group name is specified or no match is found.
+	 * Finds the target group ID by name, using partial matching.
 	 */
 	private async fetchAndFindGroupId(): Promise<number | null> {
 		if (!TARGET_GROUP) {
@@ -276,7 +271,6 @@ export class ZendeskNotifier {
 		const groups = await this.api.fetchAllGroups();
 		const needle = TARGET_GROUP.toLowerCase();
 
-		// exact match
 		const g =
 			groups.find((x) => x.name.toLowerCase() === needle) ??
 			groups.find((x) => x.name.toLowerCase().startsWith(needle)) ??
@@ -292,7 +286,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * The main polling function that fetches and processes tickets.
+	 * Fetches and processes tickets from the Zendesk API.
 	 */
 	private async poll(): Promise<void> {
 		if (this.isPolling) {
@@ -322,9 +316,8 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Creates and dispatches a browser notification for a batch of tickets.
-	 * If only one ticket is new, it shows a specific notification.
-	 * If multiple tickets are new, it shows a summary notification.
+	 * Dispatches notifications for new tickets.
+	 * Batches multiple tickets into a single summary notification.
 	 */
 	private notifyBatch(tickets: ZendeskTicketSearchResult[]): void {
 		if (!tickets.length) return;
@@ -378,7 +371,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Builds the final search query by combining base query, tags, statuses, and group.
+	 * Builds the Zendesk search query from configured parts.
 	 */
 	private buildSearchQuery(statusIds: number[], groupId: number | null): void {
 		const qp: string[] = [];
@@ -402,8 +395,7 @@ export class ZendeskNotifier {
 	}
 
 	/**
-	 * Requests permission to send notifications gracefully.
-	 * It no longer throws an error if permission is denied.
+	 * Requests notification permission without throwing on denial.
 	 */
 	private async requestNotificationPermission(): Promise<void> {
 		try {

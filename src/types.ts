@@ -1,9 +1,9 @@
 /**
- * Type definitions for Zendesk API objects.
+ * Zendesk API object types.
  */
 
 /**
- * Represents a custom status object from the Zendesk API.
+ * Zendesk custom status.
  */
 export interface ZendeskCustomStatus {
 	readonly id: number;
@@ -11,7 +11,7 @@ export interface ZendeskCustomStatus {
 }
 
 /**
- * Represents a group object from the Zendesk API.
+ * Zendesk group.
  */
 export interface ZendeskGroup {
 	readonly id: number;
@@ -19,7 +19,7 @@ export interface ZendeskGroup {
 }
 
 /**
- * Represents a simplified ticket search result object from the Zendesk API.
+ * Simplified Zendesk ticket search result.
  */
 export interface ZendeskTicketSearchResult {
 	readonly id: number;
@@ -28,10 +28,10 @@ export interface ZendeskTicketSearchResult {
 	readonly status: string;
 }
 
-// --- Service Interfaces for Dependency Injection ---
+// --- Service Interfaces ---
 
 /**
- * Interface for a service that can create notifications.
+ * Service for creating notifications.
  */
 export interface INotifier {
 	requestPermission(): Promise<NotificationPermission>;
@@ -39,7 +39,7 @@ export interface INotifier {
 }
 
 /**
- * Interface for a notification instance, abstracting the global Notification class.
+ * Abstracted notification instance.
  */
 export interface INotification {
 	onclick: ((this: Notification, ev: Event) => unknown) | null;
@@ -47,7 +47,7 @@ export interface INotification {
 }
 
 /**
- * Interface for a key-value storage mechanism.
+ * Key-value storage service.
  */
 export interface IStorage<K, V> {
 	save(data: Map<K, V>): void;
@@ -55,7 +55,7 @@ export interface IStorage<K, V> {
 }
 
 /**
- * Interface for a service that monitors the browser's online status.
+ * Service for monitoring network status.
  */
 export interface INetworkStatus {
 	on(event: "online" | "offline", callback: () => void): void;

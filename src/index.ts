@@ -5,7 +5,6 @@ import { ZendeskNotifier } from "./ZendeskNotifier.ts";
 
 /**
  * Application entry point.
- * Creates an instance of the notifier and starts it.
  */
 const apiClient = new ZendeskApiClient(window.fetch.bind(window));
 const notifier = new BrowserNotifier();

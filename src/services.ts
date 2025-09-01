@@ -1,12 +1,11 @@
 import type { INetworkStatus, INotification, INotifier } from "./types.ts";
 
 /**
- * A concrete implementation of INotifier that uses the browser's Notification API.
+ * `INotifier` implementation using the browser Notification API.
  */
 export class BrowserNotifier implements INotifier {
 	/**
-	 * Requests permission from the user to display notifications.
-	 * If permission is already denied, it avoids re-prompting.
+	 * Requests notification permission. Does not re-prompt if already denied.
 	 * @returns A promise that resolves to the NotificationPermission state.
 	 */
 	public requestPermission(): Promise<NotificationPermission> {
@@ -15,10 +14,10 @@ export class BrowserNotifier implements INotifier {
 	}
 
 	/**
-	 * Creates and returns a new browser Notification instance.
+	 * Creates a browser notification.
 	 * @param title The title of the notification.
 	 * @param options Optional settings for the notification.
-	 * @returns An INotification instance.
+	 * @returns A notification instance.
 	 */
 	public create(title: string, options: NotificationOptions): INotification {
 		if (Notification.permission !== "granted") {
@@ -26,7 +25,6 @@ export class BrowserNotifier implements INotifier {
 				"[Notifier] Skipping Notification.create; permission:",
 				Notification.permission,
 			);
-			// Return a no-op notification object to satisfy interface
 			return {
 				close: () => {
 					/* no-op */
@@ -39,11 +37,11 @@ export class BrowserNotifier implements INotifier {
 }
 
 /**
- * A concrete implementation of INetworkStatus that uses the browser's online/offline events.
+ * `INetworkStatus` implementation using browser online/offline events.
  */
 export class BrowserNetworkStatus implements INetworkStatus {
 	/**
-	 * Registers a callback function for network status changes (online/offline).
+	 * Registers a callback for 'online' or 'offline' events.
 	 * @param event The network event to listen for ('online' or 'offline').
 	 * @param callback The function to execute when the event occurs.
 	 */
