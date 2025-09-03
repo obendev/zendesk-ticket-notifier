@@ -77,9 +77,14 @@ export class ZendeskApiClient {
 
 		try {
 			const response = await this.fetchFn(endpoint, {
-				headers: { Accept: "application/json", ...options.headers },
-				signal: controller.signal,
 				...options,
+				cache: "no-cache",
+				headers: {
+					...options.headers,
+					Accept: "application/json",
+					"X-Requested-With": "XMLHttpRequest",
+				},
+				signal: controller.signal,
 			});
 
 			if (!response.ok) {
