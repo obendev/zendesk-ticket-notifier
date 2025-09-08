@@ -28,15 +28,6 @@
 		"rules": {
 			"correctness": {
 				"noNodejsModules": "on"
-			},
-
-			"style": {
-				"useConsistentMemberAccessibility": {
-					"level": "on",
-					"options": {
-						"accessibility": "explicit"
-					}
-				}
 			}
 		}
 	}
