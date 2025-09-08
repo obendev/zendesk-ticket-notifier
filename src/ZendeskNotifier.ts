@@ -15,6 +15,9 @@ import type {
 	ZendeskTicketSearchResult,
 } from "./types.ts";
 
+const NEEDS_QUOTES_REGEX = /[\s:"\\]/;
+const ESCAPE_CHARS_REGEX = /(["\\])/g;
+
 /**
  * Polls Zendesk for new tickets and sends notifications.
  */
@@ -384,7 +387,9 @@ export class ZendeskNotifier {
 		}
 
 		const safe = (s: string) =>
-			/[\s:"\\]/.test(s) ? `"${s.replace(/(["\\])/g, "\\$1")}"` : s;
+			NEEDS_QUOTES_REGEX.test(s)
+				? `"${s.replace(ESCAPE_CHARS_REGEX, "\\$1")}"`
+				: s;
 
 		if (TARGET_TAGS.length > 0) {
 			qp.push(`tags:${TARGET_TAGS.map(safe).join(",")}`);
