@@ -1,4 +1,5 @@
-import { API_ENDPOINTS, API_REQUEST_TIMEOUT_MS } from "./config.ts";
+import { API_REQUEST_TIMEOUT_MS } from "./config.ts";
+import { API_ENDPOINTS } from "./constants.ts";
 import type {
 	ZendeskCustomStatus,
 	ZendeskGroup,

@@ -1,14 +1,13 @@
 import { ApiError, type ZendeskApiClient } from "./api.ts";
 import {
 	BASE_SEARCH_QUERY,
-	MAX_INIT_RETRIES,
 	POLLING_INTERVAL_MS,
-	RETRY_DELAY_MS,
 	TARGET_GROUP,
 	TARGET_STATUS_LABELS,
 	TARGET_TAGS,
 	ZENDESK_TICKET_URL_BASE,
 } from "./config.ts";
+import { MAX_INIT_RETRIES, RETRY_DELAY_MS } from "./constants.ts";
 import type {
 	INetworkStatus,
 	INotifier,

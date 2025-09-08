@@ -1,4 +1,4 @@
-import { SESSION_STORAGE_KEY } from "./config.ts";
+import { SESSION_STORAGE_KEY } from "./constants.ts";
 import type { IStorage } from "./types.ts";
 
 /**

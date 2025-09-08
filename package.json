@@ -6,8 +6,8 @@
 	"type": "module",
 	"module": "src/index.ts",
 	"scripts": {
-		"build:prod": "bun build ./src/index.ts --outfile ./dist/index.min.js --minify",
-		"build:dev": "bun build ./src/index.ts --outfile ./dist/index.js",
+		"build:prod": "bun build ./src/index.ts --env inline --outfile ./dist/index.min.js --minify",
+		"build:dev": "bun build ./src/index.ts --env inline --outfile ./dist/index.js",
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"check": "biome check --write"
