@@ -1,7 +1,7 @@
 {
 	"private": true,
 	"name": "zendesk-ticket-notifier",
-	"version": "0.1.0",
+	"version": "0.0.0",
 	"license": "MIT",
 	"type": "module",
 	"module": "src/index.ts",
@@ -14,7 +14,7 @@
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.2",
+		"@biomejs/biome": "^2.2.3",
 		"@types/bun": "latest"
 	}
 }
