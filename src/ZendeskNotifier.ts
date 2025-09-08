@@ -139,30 +139,7 @@ export class ZendeskNotifier {
 		try {
 			await this.poll();
 		} catch (error) {
-			if (
-				error instanceof ApiError &&
-				(error.status === 429 || error.status === 503)
-			) {
-				const ra = (error.body as { retryAfter?: string })?.retryAfter;
-				let backoffMs = 60_000;
-				if (ra) {
-					const asNum = Number(ra);
-					if (Number.isNaN(asNum)) {
-						const dateMs = Date.parse(ra);
-						if (!Number.isNaN(dateMs)) {
-							backoffMs = Math.max(0, dateMs - Date.now());
-						}
-					} else {
-						backoffMs = asNum * 1000;
-					}
-				}
-				nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
-				console.warn(
-					`[Notifier] Backing off for ${nextDelay / 1000}s due to API rate limiting.`,
-				);
-			} else {
-				console.error("[Notifier] Failed to poll for new tickets:", error);
-			}
+			nextDelay = this.handlePollingError(error);
 		} finally {
 			if (!this.stopRequested) {
 				this.pollingIntervalId = setTimeout(
@@ -171,6 +148,57 @@ export class ZendeskNotifier {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Handles errors during the polling process and determines the next delay.
+	 * @param error The error caught during polling.
+	 * @returns The delay in milliseconds for the next polling attempt.
+	 */
+	private handlePollingError(error: unknown): number {
+		if (
+			error instanceof ApiError &&
+			(error.status === 429 || error.status === 503)
+		) {
+			const retryAfter = (error.body as { retryAfter?: string })?.retryAfter;
+			const backoffMs = this.calculateBackoffDelay(retryAfter);
+			const nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
+
+			console.warn(
+				`[Notifier] Backing off for ${nextDelay / 1000}s due to API rate limiting.`,
+			);
+			return nextDelay;
+		}
+
+		console.error("[Notifier] Failed to poll for new tickets:", error);
+		return POLLING_INTERVAL_MS;
+	}
+
+	/**
+	 * Parses the 'Retry-After' header value to determine the backoff delay.
+	 * @param retryAfterHeader The value of the 'Retry-After' header.
+	 * @returns The backoff delay in milliseconds.
+	 */
+	private calculateBackoffDelay(retryAfterHeader: string | undefined): number {
+		const defaultBackoffMs = 60_000;
+
+		if (!retryAfterHeader) {
+			return defaultBackoffMs;
+		}
+
+		// Check if it's a number (seconds)
+		const seconds = Number(retryAfterHeader);
+		if (!Number.isNaN(seconds)) {
+			return seconds * 1000;
+		}
+
+		// Check if it's an HTTP-date
+		const dateMs = Date.parse(retryAfterHeader);
+		if (!Number.isNaN(dateMs)) {
+			return Math.max(0, dateMs - Date.now());
+		}
+
+		return defaultBackoffMs;
 	}
 
 	/**
