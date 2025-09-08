@@ -9,7 +9,9 @@ export class BrowserNotifier implements INotifier {
 	 * @returns A promise that resolves to the NotificationPermission state.
 	 */
 	public requestPermission(): Promise<NotificationPermission> {
-		if (Notification.permission === "denied") return Promise.resolve("denied");
+		if (Notification.permission === "denied") {
+			return Promise.resolve("denied");
+		}
 		return Notification.requestPermission();
 	}
 

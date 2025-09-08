@@ -144,13 +144,13 @@ export class ZendeskNotifier {
 				let backoffMs = 60_000;
 				if (ra) {
 					const asNum = Number(ra);
-					if (!Number.isNaN(asNum)) {
-						backoffMs = asNum * 1000;
-					} else {
+					if (Number.isNaN(asNum)) {
 						const dateMs = Date.parse(ra);
 						if (!Number.isNaN(dateMs)) {
 							backoffMs = Math.max(0, dateMs - Date.now());
 						}
+					} else {
+						backoffMs = asNum * 1000;
 					}
 				}
 				nextDelay = Math.max(POLLING_INTERVAL_MS, backoffMs);
@@ -319,10 +319,14 @@ export class ZendeskNotifier {
 	 * Batches multiple tickets into a single summary notification.
 	 */
 	private notifyBatch(tickets: ZendeskTicketSearchResult[]): void {
-		if (!tickets.length) return;
+		if (tickets.length === 0) {
+			return;
+		}
 
 		// Add all IDs first, then persist once
-		for (const t of tickets) this.notifiedTickets.set(t.id, new Date());
+		for (const t of tickets) {
+			this.notifiedTickets.set(t.id, new Date());
+		}
 		this.storage.save(this.notifiedTickets);
 
 		if (tickets.length === 1) {
@@ -375,7 +379,9 @@ export class ZendeskNotifier {
 	private buildSearchQuery(statusIds: number[], groupId: number | null): void {
 		const qp: string[] = [];
 
-		if (BASE_SEARCH_QUERY) qp.push(BASE_SEARCH_QUERY);
+		if (BASE_SEARCH_QUERY) {
+			qp.push(BASE_SEARCH_QUERY);
+		}
 
 		const safe = (s: string) =>
 			/[\s:"\\]/.test(s) ? `"${s.replace(/(["\\])/g, "\\$1")}"` : s;
@@ -384,7 +390,9 @@ export class ZendeskNotifier {
 			qp.push(`tags:${TARGET_TAGS.map(safe).join(",")}`);
 		}
 
-		if (groupId !== null) qp.push(`group:${groupId}`);
+		if (groupId !== null) {
+			qp.push(`group:${groupId}`);
+		}
 
 		if (statusIds.length > 0) {
 			qp.push(statusIds.map((id) => `custom_status_id:${id}`).join(" "));
